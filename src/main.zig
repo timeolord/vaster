@@ -3,6 +3,10 @@ const builtin = @import("builtin");
 
 const GameStatePtrOpaque = *anyopaque;
 
+export fn callback(val: i32) void {
+    std.log.debug("{}\n", .{val});
+}
+
 const GameLib = struct {
     const MAX_PATH_LENGTH: comptime_int = 1024;
     exe_path_buf: [MAX_PATH_LENGTH]u8 = [_]u8{undefined} ** MAX_PATH_LENGTH,
@@ -17,7 +21,7 @@ const GameLib = struct {
 
     lib: std.DynLib = undefined,
 
-    init: *const fn (*const std.mem.Allocator) callconv(.c) GameStatePtrOpaque = undefined,
+    init: *const fn (*const std.mem.Allocator, *const @TypeOf(callback)) callconv(.c) GameStatePtrOpaque = undefined,
     update: *const fn (GameStatePtrOpaque) callconv(.c) bool = undefined,
     close: *const fn (GameStatePtrOpaque) callconv(.c) void = undefined,
 
@@ -101,7 +105,7 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = false }){};
     const gso: GameStatePtrOpaque = blk: {
         const a = gpa.allocator();
-        break :blk game.init(&a);
+        break :blk game.init(&a, &callback);
     };
 
     while (keep_running) {
