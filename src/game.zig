@@ -20,7 +20,7 @@ export fn init(allocator: *const std.mem.Allocator, callback: Callback) *anyopaq
 export fn update(gso: *anyopaque) bool {
     const gs: *GameState = @ptrCast(@alignCast(gso));
 
-    gs.test_val +%= 2;
+    gs.test_val +%= -12;
     gs.callback(gs.test_val);
 
     return true;
