@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const glfw = @import("zglfw");
 
 const GameStatePtrOpaque = *anyopaque;
 
@@ -108,6 +109,13 @@ pub fn main() !void {
         break :blk game.init(&a, &callback);
     };
 
+    try glfw.init();
+    defer glfw.terminate();
+
+    // or, using the equivalent, encapsulated, "objecty" API:
+    const window = try glfw.Window.create(600, 600, "zig-gamedev: minimal_glfw_gl", null);
+    defer window.destroy();
+
     while (keep_running) {
         if (game.check_updated()) {
             std.log.debug("Dll modified, reloading...\n", .{});
@@ -117,6 +125,7 @@ pub fn main() !void {
 
         keep_running = game.update(gso);
     }
+
     game.close(gso);
     try game.unload_lib();
 }

@@ -21,6 +21,7 @@
           packages = [
             zig
             zls
+            vulkan-tools
           ];
         };
       }
