@@ -4,6 +4,19 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const game_lib = b.addLibrary(.{
+        .name = "game",
+        .linkage = .dynamic,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/game.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+
+    b.installArtifact(game_lib);
+    const lib_cmd = b.addInstallArtifact(game_lib, .{});
+
     const exe_mod = b.addModule("vaster", .{
         .root_source_file = b.path("src/main.zig"),
         .target = target,
@@ -14,7 +27,10 @@ pub fn build(b: *std.Build) void {
         .root_module = exe_mod,
     });
 
-    b.installArtifact(exe);
+    const install_cmd = b.addInstallArtifact(exe, .{});
+
+    const exe_step = b.step("runner", "Compile the wrapper runner executable");
+    exe_step.dependOn(&install_cmd.step);
 
     const exe_check = b.addExecutable(.{
         .name = "vaster",
@@ -24,14 +40,7 @@ pub fn build(b: *std.Build) void {
     const check = b.step("check", "Check if vaster compiles");
     check.dependOn(&exe_check.step);
 
-    const run_step = b.step("run", "Run the app");
-
-    const run_cmd = b.addRunArtifact(exe);
-    run_step.dependOn(&run_cmd.step);
-
-    run_cmd.step.dependOn(b.getInstallStep());
-
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
+    const all_step = b.step("all", "Compile the game and wrapper");
+    all_step.dependOn(exe_step);
+    all_step.dependOn(&lib_cmd.step);
 }
