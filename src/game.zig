@@ -8,14 +8,15 @@ pub const GameState = struct {
     allocator: std.mem.Allocator,
     test_val: i32,
     callback: Callback,
-    // window:
+    window: *glfw.Window,
 };
 
-export fn init(allocator: *const std.mem.Allocator, callback: Callback) *anyopaque {
+export fn init(allocator: *const std.mem.Allocator, callback: Callback, window: *glfw.Window) *anyopaque {
     const gs = allocator.create(GameState) catch @panic("could not init game");
     gs.allocator = allocator.*;
     gs.test_val = 3;
     gs.callback = callback;
+    gs.window = window;
 
     return gs;
 }
@@ -26,13 +27,13 @@ export fn update(gso: *anyopaque) bool {
     gs.test_val +%= -12;
     gs.callback(gs.test_val);
 
-    // if (!window.shouldClose()) {
-    //     glfw.pollEvents();
+    if (!gs.window.shouldClose()) {
+        glfw.pollEvents();
 
-    //     // render your things here
+        // render your things here
 
-    //     window.swapBuffers();
-    // }
+        gs.window.swapBuffers();
+    }
 
     return true;
 }

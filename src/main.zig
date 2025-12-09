@@ -22,7 +22,7 @@ const GameLib = struct {
 
     lib: std.DynLib = undefined,
 
-    init: *const fn (*const std.mem.Allocator, *const @TypeOf(callback)) callconv(.c) GameStatePtrOpaque = undefined,
+    init: *const fn (*const std.mem.Allocator, *const @TypeOf(callback), *glfw.Window) callconv(.c) GameStatePtrOpaque = undefined,
     update: *const fn (GameStatePtrOpaque) callconv(.c) bool = undefined,
     close: *const fn (GameStatePtrOpaque) callconv(.c) void = undefined,
 
@@ -103,18 +103,17 @@ pub fn main() !void {
     game.load_lib() catch @panic("Couldn't load game");
     var keep_running = true;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = false }){};
-    const gso: GameStatePtrOpaque = blk: {
-        const a = gpa.allocator();
-        break :blk game.init(&a, &callback);
-    };
-
     try glfw.init();
     defer glfw.terminate();
 
-    // or, using the equivalent, encapsulated, "objecty" API:
-    const window = try glfw.Window.create(600, 600, "zig-gamedev: minimal_glfw_gl", null);
+    const window: *glfw.Window = try glfw.Window.create(500, 500, "piss", null);
     defer window.destroy();
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = false }){};
+    const gso: GameStatePtrOpaque = blk: {
+        const a = gpa.allocator();
+        break :blk game.init(&a, &callback, window);
+    };
 
     while (keep_running) {
         if (game.check_updated()) {
