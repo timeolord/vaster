@@ -4,7 +4,7 @@
     .fingerprint = 0x4418518ed9738aa2, // Changing this has security and trust implications.
     .minimum_zig_version = "0.15.2",
     .dependencies = .{
-        .vulkan = .{
+        .vulkan_zig = .{
             .url = "https://github.com/Snektron/vulkan-zig/archive/refs/heads/zig-0.15-compat.tar.gz",
             .hash = "vulkan-0.0.0-r7Ytx_VDAwAiMl0YSu2UOkVMIGJN7CeIQaxJR-hUSfD6",
         },

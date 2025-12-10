@@ -1,12 +1,12 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const vk = @import("vulkan");
 const glfw = @import("zglfw");
+const GraphicsContext = @import("graphics_context.zig").GraphicsContext;
+const Swapchain = @import("swapchain.zig").Swapchain;
+const Allocator = std.mem.Allocator;
 
 const GameStatePtrOpaque = *anyopaque;
-
-export fn callback(val: i32) void {
-    std.log.debug("{}\n", .{val});
-}
 
 const GameLib = struct {
     const MAX_PATH_LENGTH: comptime_int = 1024;
@@ -22,7 +22,7 @@ const GameLib = struct {
 
     lib: std.DynLib = undefined,
 
-    init: *const fn (*const std.mem.Allocator, *const @TypeOf(callback), *glfw.Window) callconv(.c) GameStatePtrOpaque = undefined,
+    init: *const fn (*const std.mem.Allocator, *glfw.Window) callconv(.c) GameStatePtrOpaque = undefined,
     update: *const fn (GameStatePtrOpaque) callconv(.c) bool = undefined,
     close: *const fn (GameStatePtrOpaque) callconv(.c) void = undefined,
 
@@ -106,21 +106,43 @@ pub fn main() !void {
     try glfw.init();
     defer glfw.terminate();
 
-    const window: *glfw.Window = try glfw.Window.create(500, 500, "piss", null);
+    if (!glfw.isVulkanSupported()) {
+        @panic("Vulkan is not supported");
+    }
+
+    const app_name = "pissbaby";
+    var extent = vk.Extent2D{ .width = 800, .height = 600 };
+    const window: *glfw.Window = try glfw.Window.create(@intCast(extent.width), @intCast(extent.height), app_name, null);
     defer window.destroy();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = false }){};
-    const gso: GameStatePtrOpaque = blk: {
-        const a = gpa.allocator();
-        break :blk game.init(&a, &callback, window);
+    extent.width, extent.height = blk: {
+        var w: c_int = undefined;
+        var h: c_int = undefined;
+        glfw.getFramebufferSize(window, &w, &h);
+        break :blk .{ @intCast(w), @intCast(h) };
     };
 
-    while (keep_running) {
+    var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = false }){};
+    const allocator = gpa.allocator();
+    const gso: GameStatePtrOpaque = blk: {
+        break :blk game.init(&allocator, window);
+    };
+
+    const gc = try GraphicsContext.init(allocator, app_name, window);
+    defer gc.deinit();
+
+    std.log.debug("Using device: {s}", .{gc.deviceName()});
+
+    var swapchain = try Swapchain.init(&gc, allocator, extent);
+    defer swapchain.deinit();
+
+    while (keep_running and !window.shouldClose()) {
         if (game.check_updated()) {
             std.log.debug("Dll modified, reloading...\n", .{});
             try game.unload_lib();
             try game.load_lib();
         }
+        glfw.pollEvents();
 
         keep_running = game.update(gso);
     }

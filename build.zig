@@ -1,5 +1,5 @@
 const std = @import("std");
-// const vkgen = @import("vulkan_zig");
+const vkgen = @import("vulkan");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -10,22 +10,12 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    // lib_mod.addImport("vulkan", vulkan);
-
-    const game_lib = b.addLibrary(.{
-        .name = "game",
-        .linkage = .dynamic,
-        .root_module = lib_mod,
-    });
 
     const registry = b.dependency("vulkan_headers", .{}).path("registry/vk.xml");
-    const vulkan = b.dependency("vulkan", .{
+    const vulkan_dep = b.dependency("vulkan_zig", .{
         .registry = registry,
-    }).module("vulkan-zig");
-    lib_mod.addImport("vulkan", vulkan);
-
-    b.installArtifact(game_lib);
-    const lib_cmd = b.addInstallArtifact(game_lib, .{});
+    });
+    const vulkan = vulkan_dep.module("vulkan-zig");
 
     const exe_mod = b.addModule("vaster", .{
         .root_source_file = b.path("src/main.zig"),
@@ -35,9 +25,8 @@ pub fn build(b: *std.Build) void {
 
     const zglfw = b.dependency("zglfw", .{
         .import_vulkan = true,
-        .x11 = false,
+        .x11 = true,
         .wayland = true,
-        // .shared = true,
     });
     const zglfw_mod = zglfw.module("root");
     zglfw_mod.addImport("vulkan", vulkan);
@@ -45,6 +34,17 @@ pub fn build(b: *std.Build) void {
     exe_mod.addImport("zglfw", zglfw_mod);
     lib_mod.linkLibrary(zglfw.artifact("glfw"));
     exe_mod.linkLibrary(zglfw.artifact("glfw"));
+
+    const game_lib = b.addLibrary(.{
+        .name = "game",
+        .linkage = .dynamic,
+        .root_module = lib_mod,
+    });
+    lib_mod.addImport("vulkan", vulkan);
+    exe_mod.addImport("vulkan", vulkan);
+
+    b.installArtifact(game_lib);
+    const lib_cmd = b.addInstallArtifact(game_lib, .{});
 
     const exe = b.addExecutable(.{
         .name = "vaster",

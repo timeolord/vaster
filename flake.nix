@@ -22,6 +22,7 @@
             zig
             zls
             vulkan-tools
+            xorg.xorgserver
           ];
         };
       }
