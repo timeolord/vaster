@@ -1,11 +1,16 @@
 const std = @import("std");
-const vulkan = @import("vulkan");
+
 const glfw = @import("zglfw");
+
+const constants = @import("constants.zig");
+const graphics = @import("graphics.zig");
 
 pub const GameState = struct {
     allocator: std.mem.Allocator,
     test_val: i32,
     window: *glfw.Window,
+
+    graphics_context: graphics.Context,
 };
 
 export fn init(allocator: *const std.mem.Allocator, window: *glfw.Window) *anyopaque {
@@ -13,6 +18,8 @@ export fn init(allocator: *const std.mem.Allocator, window: *glfw.Window) *anyop
     gs.allocator = allocator.*;
     gs.test_val = 3;
     gs.window = window;
+
+    gs.graphics_context = graphics.Context.init(gs.allocator, gs.window);
 
     return gs;
 }
@@ -26,7 +33,7 @@ export fn update(gso: *anyopaque) bool {
 }
 
 export fn close(gso: *anyopaque) void {
-    _ = gso;
+    const gs: *GameState = @ptrCast(@alignCast(gso));
 
-    glfw.terminate();
+    gs.graphics_context.deinit();
 }

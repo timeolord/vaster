@@ -1,10 +1,11 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const vk = @import("vulkan");
-const glfw = @import("zglfw");
-const GraphicsContext = @import("graphics_context.zig").GraphicsContext;
-const Swapchain = @import("swapchain.zig").Swapchain;
 const Allocator = std.mem.Allocator;
+
+// const vk = @import("vulkan");
+const glfw = @import("zglfw");
+
+const constants = @import("constants.zig");
 
 const GameStatePtrOpaque = *anyopaque;
 
@@ -110,31 +111,19 @@ pub fn main() !void {
         @panic("Vulkan is not supported");
     }
 
-    const app_name = "pissbaby";
-    var extent = vk.Extent2D{ .width = 800, .height = 600 };
-    const window: *glfw.Window = try glfw.Window.create(@intCast(extent.width), @intCast(extent.height), app_name, null);
+    const window: *glfw.Window = try glfw.Window.create(
+        @intCast(constants.window_width),
+        @intCast(constants.window_height),
+        constants.app_name,
+        null,
+    );
     defer window.destroy();
-
-    extent.width, extent.height = blk: {
-        var w: c_int = undefined;
-        var h: c_int = undefined;
-        glfw.getFramebufferSize(window, &w, &h);
-        break :blk .{ @intCast(w), @intCast(h) };
-    };
 
     var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = false }){};
     const allocator = gpa.allocator();
     const gso: GameStatePtrOpaque = blk: {
         break :blk game.init(&allocator, window);
     };
-
-    const gc = try GraphicsContext.init(allocator, app_name, window);
-    defer gc.deinit();
-
-    std.log.debug("Using device: {s}", .{gc.deviceName()});
-
-    var swapchain = try Swapchain.init(&gc, allocator, extent);
-    defer swapchain.deinit();
 
     while (keep_running and !window.shouldClose()) {
         if (game.check_updated()) {
