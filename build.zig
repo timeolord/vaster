@@ -26,7 +26,7 @@ pub fn build(b: *std.Build) void {
     const zglfw = b.dependency("zglfw", .{
         .import_vulkan = true,
         .x11 = true,
-        .wayland = true,
+        .wayland = false,
     });
     const zglfw_mod = zglfw.module("root");
     zglfw_mod.addImport("vulkan", vulkan);
