@@ -23,6 +23,7 @@
             zls
             vulkan-tools
             xorg.xorgserver
+            vulkan-validation-layers
           ];
         };
       }
