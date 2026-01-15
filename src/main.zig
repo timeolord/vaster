@@ -2,10 +2,10 @@ const std = @import("std");
 const builtin = @import("builtin");
 const Allocator = std.mem.Allocator;
 
-// const vk = @import("vulkan");
 const glfw = @import("zglfw");
 
 const constants = @import("constants.zig");
+const graphics = @import("graphics.zig");
 
 const GameStatePtrOpaque = *anyopaque;
 
@@ -23,7 +23,7 @@ const GameLib = struct {
 
     lib: std.DynLib = undefined,
 
-    init: *const fn (*const std.mem.Allocator, *glfw.Window) callconv(.c) GameStatePtrOpaque = undefined,
+    init: *const fn (*const std.mem.Allocator, *glfw.Window, *graphics.Context) callconv(.c) GameStatePtrOpaque = undefined,
     update: *const fn (GameStatePtrOpaque) callconv(.c) bool = undefined,
     close: *const fn (GameStatePtrOpaque) callconv(.c) void = undefined,
 
@@ -111,18 +111,22 @@ pub fn main() !void {
         @panic("Vulkan is not supported");
     }
 
+    glfw.windowHint(glfw.WindowHint.client_api, glfw.ClientApi.no_api);
     const window: *glfw.Window = try glfw.Window.create(
         @intCast(constants.window_width),
         @intCast(constants.window_height),
         constants.app_name,
         null,
     );
-    defer window.destroy();
+    // defer window.destroy();
 
     var gpa = std.heap.GeneralPurposeAllocator(.{ .thread_safe = false }){};
     const allocator = gpa.allocator();
+
+    var graphics_context = graphics.Context.init(allocator, window);
+
     const gso: GameStatePtrOpaque = blk: {
-        break :blk game.init(&allocator, window);
+        break :blk game.init(&allocator, window, &graphics_context);
     };
 
     while (keep_running and !window.shouldClose()) {

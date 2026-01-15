@@ -222,7 +222,7 @@ pub const Queue = struct {
 
 fn createSurface(instance: Instance, window: *glfw.Window) !vk.SurfaceKHR {
     var surface: vk.SurfaceKHR = undefined;
-    glfw.createWindowSurface(instance.handle, window, null, &surface) catch return error.SurfaceInitFailed;
+    glfw.createWindowSurface(instance.handle, window, null, &surface) catch |e| @panic(@errorName(e));
 
     return surface;
 }

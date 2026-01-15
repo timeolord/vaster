@@ -10,16 +10,16 @@ pub const GameState = struct {
     test_val: i32,
     window: *glfw.Window,
 
-    graphics_context: graphics.Context,
+    graphics_context: *graphics.Context,
 };
 
-export fn init(allocator: *const std.mem.Allocator, window: *glfw.Window) *anyopaque {
+export fn init(allocator: *const std.mem.Allocator, window: *glfw.Window, context: *graphics.Context) *anyopaque {
     const gs = allocator.create(GameState) catch @panic("could not init game");
     gs.allocator = allocator.*;
     gs.test_val = 3;
     gs.window = window;
 
-    gs.graphics_context = graphics.Context.init(gs.allocator, gs.window);
+    gs.graphics_context = context;
 
     return gs;
 }
@@ -35,5 +35,7 @@ export fn update(gso: *anyopaque) bool {
 export fn close(gso: *anyopaque) void {
     const gs: *GameState = @ptrCast(@alignCast(gso));
 
-    gs.graphics_context.deinit();
+    // gs.graphics_context.deinit();
+
+    _ = gs;
 }
